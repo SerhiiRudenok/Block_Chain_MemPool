@@ -1,0 +1,45 @@
+﻿@model IEnumerable<Block_Chain_Example_1.Models.Block>
+
+@{
+    ViewData["Title"] = "Пошук блоку";
+    var block = ViewBag.FoundBlock as Block_Chain_Example_1.Models.Block;
+    bool isPost = ViewBag.IsPost is bool b && b;
+}
+
+<h1>Пошук блоку</h1>
+
+<form method="post" asp-action="Search" class="mb-3">
+    <div class="mb-2">
+        <input type="text" name="query" placeholder="Введіть індекс або хеш" class="form-control" />
+    </div>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Знайти</button>
+        <a asp-action="Index" class="btn btn-secondary">Назад</a>
+    </div>
+</form>
+
+@if (block != null)
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Index</th>
+                <th>PrevHash</th>
+                <th>Hash</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@block.Index</td>
+                <td>@block.PrevHash</td>
+                <td>@block.Hash</td>
+                <td>@block.Timestamp</td>
+            </tr>
+        </tbody>
+    </table>
+}
+else if (isPost)
+{
+    <p class="text-danger">Блок не знайдено.</p>
+}

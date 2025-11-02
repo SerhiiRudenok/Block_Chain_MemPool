@@ -1,0 +1,191 @@
+﻿@model IEnumerable<Block_Chain_Example_1.Models.Block>
+
+@{
+    ViewData["Title"] = "Index";
+    int? firstInvalidIndex = ViewBag.FirstInvalidIndex as int?;
+}
+
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<div style="display:flex; flex-direction:row">
+    <textarea rows="4">Private key => @ViewBag.PrivateKey</textarea>
+    <textarea rows="4">Public key => @ViewBag.PublicKey</textarea>
+    <h6>Valid Chain => @ViewBag.Valid</h6>
+    <h6>Difficulty => @ViewBag.Difficulty</h6>
+</div>
+
+<hr />
+
+<div style="display:flex; flex-direction:row; margin:20px">
+    <form method="post" asp-action="DemoSetup" style="margin:20px">
+        <input type="submit" value="START DEMO" />
+    </form>
+
+    <form method="post" asp-action="MinePending" style="margin:20px">
+        <input type="text" name="privateKey" placeholder="Введіть приватний ключ" />
+        <input type="submit" value="START MINE" />
+    </form>
+
+    <form method="post" asp-action="SetDifficulty" style="margin:20px">
+        <input type="text" name="difficulty" placeholder="Введіть важкість алгоритму" />
+        <input type="submit" value="Задати" />
+    </form>
+</div>
+
+@{
+    var mempool = ViewBag.Mempool as List<Transaction>;
+    var wallet = ViewBag.Wallets as List<Wallet>;
+}
+<hr />
+
+<div>
+    <h3>Register Wallet</h3>
+    <form method="post" asp-action="RegisterWallet">
+        <input type="text" name="displayName" placeholder="Введіть ім'я власника гаманця" />
+        <input type="text" name="publicKeyXml" placeholder="Введіть Public Key XML" />
+        <input type="submit" value="Register Wallet" />
+    </form>
+</div>
+
+<div>
+    @if (wallet.Count > 0)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Address</th>
+                    <th>Name</th>
+                    <th>PublicKey</th>
+                    <th>RegisteredAt</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var w in wallet)
+                {
+                    <tr>
+                        <td>@w.Address</td>
+                        <td>@w.DisplayName</td>
+                        <td>@w.PublicKeyXml.Substring(0, 10)</td>
+                        <td>@w.RegisteredAt.ToString("u")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>Гаманців немає</p>
+    }
+</div>
+
+<hr />
+
+<h3>Mem pool</h3>
+<form method="post" asp-action="CreateTransaction" style="margin:15px">
+    <input name="fromAddress" type="text" placeholder="From Address (ADDR_...)" />
+    <input name="toAddress" type="text" placeholder="To Address (ADDR_...)" />
+    <input name="amount" type="number" placeholder="Amount" />
+    <input name="fee" type="number" placeholder="Fee" />
+    <input name="privateKey" type="text" placeholder="Private key" />
+    <input name="note" type="text" placeholder="note" />
+    <input type="submit" value="Додати у мемпул" />
+</form>
+<div>
+    @if (mempool.Count > 0)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>From Address</th>
+                    <th>To Address</th>
+                    <th>Amount</th>
+                    <th>Fee</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in mempool)
+                {
+                    <tr>
+                        <td>@m.FromAddress</td>
+                        <td>@m.ToAddress</td>
+                        <td>@m.Amount</td>
+                        <td>@m.Fee</td>
+                        <td>@m.Note</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>Транзакцій немає</p>
+    }
+</div>
+
+<hr />
+
+
+@* ================================== *@
+@* Інформаційний блок *@
+@if (ViewBag.Valid == false)
+{
+    <p class="text-danger"><strong>Порушено цілісність ланцюга блоків.</strong></p>
+}
+
+
+@* ================================== *@
+@* ТАБЛИЦЯ блоків *@
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.Index)</th>
+            <th>@Html.DisplayNameFor(model => model.Nonce)</th>
+            <th>@Html.DisplayNameFor(model => model.MiningDurationMs)</th>
+            <th>@Html.DisplayNameFor(model => model.PrevHash)</th>
+            <th>@Html.DisplayNameFor(model => model.Hash)</th>
+            <th>@Html.DisplayNameFor(model => model.Timestamp)</th>
+            <th>@Html.DisplayNameFor(model => model.Signature)</th>
+            <th>Статус підпису</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            string rowClass = "";
+
+            if (firstInvalidIndex.HasValue)
+            {
+                if (item.Index < firstInvalidIndex.Value)
+                {
+					rowClass = "table-success"; // валідний блок
+                }
+                else
+                {
+					rowClass = "table-danger"; // невалідний блок і всі після нього
+                }
+            }
+
+            <tr class="@rowClass">
+                <td>@item.Index</td>
+                <td>@item.Nonce</td>
+                <td>@item.MiningDurationMs</td>
+                <td>@(item.PrevHash.Length > 12 ? item.PrevHash.Substring(0, 12) + "..." : item.PrevHash)</td>
+                <td>@(item.Hash.Length > 12 ? item.Hash.Substring(0, 12) + "..." : item.Hash)</td>
+                <td>
+                    @item.Timestamp.ToString("dd MMMM yyyy 'р.', HH:mm:ss", new System.Globalization.CultureInfo("uk-UA"))
+                </td>
+                <td>@(item.Signature.Length > 12 ? item.Signature.Substring(0, 12) + "..." : item.Signature)</td>
+                <td>@(item.Verify() ? "валідний" : "невалідний")</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Index" class="btn btn-sm btn-warning me-1">Edit</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
